@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Undangan Pernikahan</title>
+
+  <!-- SheetJS untuk baca Master.xlsx di browser -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#f9f7f3;
+      --card:#ffffff;
+      --accent:#9b7d6b;
+      --muted:#6b6b6b;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+      background:linear-gradient(180deg,var(--bg),#fff);
+      color:#222;
+      -webkit-font-smoothing:antialiased;
+    }
+    .wrap{
+      max-width:840px;
+      margin:24px auto;
+      padding:16px;
+    }
+    .card{
+      background:var(--card);
+      border-radius:16px;
+      padding:24px 20px 26px;
+      box-shadow:0 10px 35px rgba(0,0,0,0.06);
+    }
+    .hero{
+      display:flex;
+      gap:18px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .photo{
+      width:140px;
+      height:140px;
+      border-radius:16px;
+      overflow:hidden;
+      background:#eee;
+      flex:0 0 140px;
+    }
+    .photo img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+    }
+    .hero-text{
+      flex:1;
+      min-width:220px;
+    }
+    .label{
+      font-size:13px;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.06em;
+      margin-bottom:4px;
+    }
+    .title-main{
+      font-size:18px;
+      margin:0 0 4px;
+    }
+    .names{
+      font-size:26px;
+      font-weight:700;
+      color:var(--accent);
+      line-height:1.2;
+    }
+    .names span{
+      display:block;
+    }
+    .guest{
+      margin-top:8px;
+      font-size:14px;
+      color:var(--muted);
+    }
+    .date-line{
+      margin-top:8px;
+      font-size:14px;
+      color:var(--muted);
+    }
+    .divider{
+      height:1px;
+      background:#eee;
+      border-radius:4px;
+      margin:18px 0;
+    }
+    .section{
+      margin-bottom:14px;
+    }
+    .section h3{
+      margin:0 0 6px;
+      font-size:16px;
+      color:var(--accent);
+    }
+    .section p{
+      margin:0;
+      font-size:14px;
+      color:#333;
+      white-space:pre-line;
+    }
+    .two-col{
+      display:flex;
+      flex-wrap:wrap;
+      gap:14px;
+    }
+    .event-card{
+      flex:1;
+      min-width:200px;
+      border-radius:12px;
+      border:1px solid #f0efef;
+      background:#fafafa;
+      padding:12px 12px 10px;
+    }
+    .event-card h4{
+      margin:0 0 4px;
+      font-size:14px;
+      color:var(--accent);
+    }
+    .event-card p{
+      margin:0;
+      font-size:13px;
+      color:var(--muted);
+      white-space:pre-line;
+    }
+    .gift-box{
+      border-radius:12px;
+      border:1px dashed #e0d0c5;
+      padding:10px 12px;
+      font-size:14px;
+      background:#fdf9f5;
+      white-space:pre-line;
+    }
+    .message{
+      font-size:14px;
+      margin-top:4px;
+      white-space:pre-line;
+    }
+    .note{
+      margin-top:14px;
+      font-size:12px;
+      color:#999;
+      text-align:center;
+    }
+    .status{
+      text-align:center;
+      font-size:13px;
+      color:#888;
+      margin:12px 0 4px;
+    }
+    .hidden{display:none !important;}
+
+    /* Backsound control */
+    .backsound-wrap{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      margin-top:10px;
+      font-size:13px;
+      color:var(--muted);
+    }
+    .btn{
+      padding:7px 10px;
+      border-radius:999px;
+      border:none;
+      cursor:pointer;
+      font-size:13px;
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+    }
+    .btn-primary{
+      background:var(--accent);
+      color:#fff;
+    }
+    .btn-primary:disabled{
+      opacity:.6;
+      cursor:not-allowed;
+    }
+
+    @media (max-width:600px){
+      .card{padding:20px 16px;}
+      .photo{width:110px;height:110px;}
+      .names{font-size:22px;}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div id="status" class="status">Memuat data undangan dari Master.xlsx...</div>
+
+    <div class="card" id="invitationCard">
+      <div class="hero">
+        <div class="photo">
+          <img id="photo" src="" alt="Foto Mempelai" />
+        </div>
+        <div class="hero-text">
+          <div class="label">Undangan Pernikahan</div>
+          <h2 class="title-main" id="inviteTitle">
+            Dengan hormat, kami mengundang Bapak/Ibu/Saudara/i
+          </h2>
+          <div class="names" id="coupleNames">
+            <span>Nama Mempelai Pria</span>
+            <span>&amp;</span>
+            <span>Nama Mempelai Wanita</span>
+          </div>
+          <div class="guest" id="guestName"></div>
+          <div class="date-line" id="mainDate">Tanggal & waktu akan diinformasikan</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section">
+        <h3>Profil Mempelai</h3>
+        <p id="groomData">Mempelai pria...</p>
+        <p id="brideData" style="margin-top:4px;">Mempelai wanita...</p>
+      </div>
+
+      <div class="section">
+        <h3>Akad Nikah & Resepsi</h3>
+        <div class="two-col">
+          <div class="event-card">
+            <h4 id="akadTitle">Akad Nikah</h4>
+            <p id="akadDetail">Tanggal; Waktu; Lokasi</p>
+          </div>
+          <div class="event-card">
+            <h4 id="resepsiTitle">Resepsi</h4>
+            <p id="resepsiDetail">Tanggal; Waktu; Lokasi</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Wedding Gift</h3>
+        <div class="gift-box" id="giftInfo">
+          Informasi rekening / kado digital akan ditampilkan di sini.
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Pesan Untuk Tamu</h3>
+        <p class="message" id="inviteMessage">
+          Kami mengharapkan kehadiran Bapak/Ibu/Saudara/i pada acara pernikahan kami.
+        </p>
+      </div>
+
+      <div class="section" id="backsoundSection">
+        <h3>Backsound</h3>
+        <div class="backsound-wrap">
+          <span id="backsoundLabel">Silakan tekan tombol di samping untuk memutar musik.</span>
+          <button class="btn btn-primary" id="btnBacksound" disabled>Memuat...</button>
+        </div>
+        <audio id="backsound" class="hidden" loop></audio>
+      </div>
+    </div>
+
+    <div class="note" id="noteId">
+      Gunakan parameter <code>?id=KODE_TAMU</code> di URL untuk memilih baris tamu di Master.xlsx.
+    </div>
+  </div>
+
+  <script>
+    // ========= KONFIGURASI UTAMA =========
+    // Nama file Excel di repo (letakkan di folder yang sama dengan index.html)
+    const EXCEL_FILE = "Master.xlsx";
+    // Nama sheet (jika kosong, dipakai sheet pertama)
+    const SHEET_NAME = "Undangan";
+    // Nama kolom yang diharapkan di Master.xlsx
+    const COL = {
+      id: "id",                         // KODE_TAMU unik -> diambil dari ?id=
+      groomName: "groom_name",          // Nama mempelai pria
+      groomInfo: "groom_info",          // Deskripsi / orang tua mempelai pria
+      brideName: "bride_name",          // Nama mempelai wanita
+      brideInfo: "bride_info",          // Deskripsi / orang tua mempelai wanita
+      photoUrl: "photo_url",            // URL foto (boleh salah satu/gabungan)
+      inviteTitle: "invite_title",      // Judul/salam pembuka
+      inviteMessage: "invite_message",  // Pesan undangan
+      guestName: "guest_name",          // Nama tamu
+      dateISO: "date_iso",              // Format yyyy-mm-dd
+      timeText: "time_text",            // Jam, mis: "10.00 WIB"
+      akadTitle: "akad_title",
+      akadDetail: "akad_detail",
+      resepsiTitle: "resepsi_title",
+      resepsiDetail: "resepsi_detail",
+      giftInfo: "gift_info",            // Rekening / link kado
+      backsoundUrl: "backsound_url"     // URL file backsound (mp3/ogg dll)
+    };
+
+    const $ = id => document.getElementById(id);
+
+    function getQueryId(){
+      const params = new URLSearchParams(window.location.search);
+      return params.get("id") || params.get("kode") || params.get("guest") || "";
+    }
+
+    function formatDateIndo(iso, timeText){
+      if(!iso) return timeText || "";
+      try{
+        const d = new Date(iso + "T00:00:00");
+        const opt = {weekday:"long", year:"numeric", month:"long", day:"numeric"};
+        const base = d.toLocaleDateString("id-ID", opt);
+        return timeText ? `${base} • ${timeText}` : base;
+      }catch(e){
+        return timeText ? `${iso} • ${timeText}` : iso;
+      }
+    }
+
+    function fillTemplate(row){
+      // Data utama
+      const groomName  = row[COL.groomName]  || "Nama Mempelai Pria";
+      const groomInfo  = row[COL.groomInfo]  || "";
+      const brideName  = row[COL.brideName]  || "Nama Mempelai Wanita";
+      const brideInfo  = row[COL.brideInfo]  || "";
+      const photoUrl   = row[COL.photoUrl]   || "";
+      const inviteTitle= row[COL.inviteTitle]|| "Dengan hormat, kami mengundang Bapak/Ibu/Saudara/i";
+      const inviteMsg  = row[COL.inviteMessage] || "Kami mengharapkan kehadiran Bapak/Ibu/Saudara/i pada acara pernikahan kami.";
+      const guestName  = row[COL.guestName] || "";
+      const dateISO    = row[COL.dateISO]   || "";
+      const timeText   = row[COL.timeText]  || "";
+      const akadTitle  = row[COL.akadTitle] || "Akad Nikah";
+      const akadDetail = row[COL.akadDetail]|| "Tanggal; Waktu; Lokasi";
+      const resepsiTitle  = row[COL.resepsiTitle] || "Resepsi";
+      const resepsiDetail = row[COL.resepsiDetail]|| "Tanggal; Waktu; Lokasi";
+      const giftInfo   = row[COL.giftInfo]  || "Informasi rekening / kado digital akan ditampilkan di sini.";
+      const backsoundUrl = row[COL.backsoundUrl] || "audio/sempurna.mp3";
+
+      $("inviteTitle").textContent = inviteTitle;
+      $("coupleNames").innerHTML = `
+        <span>${groomName}</span>
+        <span>&amp;</span>
+        <span>${brideName}</span>
+      `;
+      $("groomData").textContent = groomInfo || (`Mempelai pria: ${groomName}`);
+      $("brideData").textContent = brideInfo || (`Mempelai wanita: ${brideName}`);
+      $("inviteMessage").textContent = inviteMsg;
+      $("mainDate").textContent = formatDateIndo(dateISO, timeText);
+      $("guestName").textContent = guestName ? `Kepada Yth. ${guestName}` : "";
+
+      $("akadTitle").textContent   = akadTitle;
+      $("akadDetail").textContent  = akadDetail;
+      $("resepsiTitle").textContent= resepsiTitle;
+      $("resepsiDetail").textContent= resepsiDetail;
+      $("giftInfo").textContent    = giftInfo;
+
+      // Foto
+      const img = $("photo");
+      if(photoUrl){
+        img.src = photoUrl;
+        img.alt = groomName + " & " + brideName;
+      }else{
+        const svg = encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='600' height='600'><rect fill='#eaeaea' width='100%' height='100%'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='32' fill='#aaaaaa'>Foto</text></svg>");
+        img.src = "data:image/svg+xml;charset=utf-8," + svg;
+        img.alt = "Foto";
+      }
+
+      // Backsound
+      setupBacksound(backsoundUrl, groomName, brideName);
+    }
+
+    function setupBacksound(url, groomName, brideName){
+      const section = $("backsoundSection");
+      const audio = $("backsound");
+      const btn = $("btnBacksound");
+      const label = $("backsoundLabel");
+
+      if(!url){
+        section.classList.add("hidden");
+        return;
+      }
+
+      audio.src = url;
+      audio.classList.remove("hidden");
+      btn.disabled = false;
+      btn.textContent = "▶ Putar musik";
+      label.textContent = `Backsound untuk undangan ${groomName} & ${brideName}.`;
+
+      btn.addEventListener("click", async () => {
+        try{
+          if(audio.paused){
+            await audio.play();
+            btn.textContent = "⏸ Hentikan musik";
+          }else{
+            audio.pause();
+            btn.textContent = "▶ Putar musik";
+          }
+        }catch(e){
+          alert("Browser memblokir autoplay. Coba tekan tombol lagi atau pastikan file backsound dapat diakses.");
+        }
+      });
+    }
+
+    async function loadExcel(){
+      const statusEl = $("status");
+      const noteEl = $("noteId");
+      try{
+        statusEl.textContent = "Mengambil Master.xlsx...";
+        const resp = await fetch(EXCEL_FILE);
+        if(!resp.ok) throw new Error("Gagal mengambil Master.xlsx (" + resp.status + ")");
+        const buf = await resp.arrayBuffer();
+
+        const wb = XLSX.read(buf, {type:"array"});
+        const sheetName = SHEET_NAME || wb.SheetNames[0];
+        const ws = wb.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(ws, {defval:""});
+
+        if(!rows.length){
+          throw new Error("Sheet kosong atau tidak ada data.");
+        }
+
+        const qId = getQueryId();
+        let row = rows[0];
+        if(qId){
+          const found = rows.find(r => String(r[COL.id]).trim() === String(qId).trim());
+          if(found) row = found;
+          statusEl.textContent = found
+            ? `Data undangan untuk id="${qId}" berhasil dimuat.`
+            : `id="${qId}" tidak ditemukan di Master.xlsx, menampilkan baris pertama.`;
+        }else{
+          statusEl.textContent = "Parameter id tidak diberikan, menampilkan baris pertama Master.xlsx.";
+        }
+
+        fillTemplate(row);
+        noteEl.textContent = `Tip: Tambahkan ?id=${row[COL.id] || "KODE_TAMU"} di URL untuk membuka data tamu tertentu.`;
+      }catch(e){
+        console.error(e);
+        statusEl.textContent = "Gagal memuat Master.xlsx. Menampilkan data default.";
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", loadExcel);
+  </script>
+</body>
+</html>
